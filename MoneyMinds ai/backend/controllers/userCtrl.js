@@ -131,43 +131,59 @@ const updatefund = async (req, res) => {
 
 const createRosca = async (req, res) => {
   try {
-    // Extract data from the request body
-    const {
-      roscaName,
-      size,
-      amount,
-      isAdmin,
-      duration,
-      aadharNo,
-      members,
-      bid,
-    } = req.body;
+    const { roscaName, size, amount, duration, aadharNo, members, bid } =
+      req.body;
 
-    // Create a new rosca document
+    // Validate required fields
+    if (!roscaName || !size || !amount || !duration || !aadharNo) {
+      return res.status(400).json({
+        success: false,
+        message: "All required fields must be provided.",
+      });
+    }
+
+    // Validate members array
+    if (!members || !Array.isArray(members) || members.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Members array is required with at least one member.",
+      });
+    }
+
+    // Validate each member
+    for (const member of members) {
+      if (!member.name) {
+        return res.status(400).json({
+          success: false,
+          message: "Each member must have an id and name.",
+        });
+      }
+    }
+
+    // Create the new Rosca document
     const newRosca = new roscaModel({
       roscaName,
       size,
       amount,
-      isAdmin,
       duration,
       aadharNo,
       members,
       bid,
     });
 
-    // Save the rosca to the database
+    // Save the Rosca to the database
     const savedRosca = await newRosca.save();
 
     res.status(201).json({
       success: true,
-      message: "Rosca created successfully",
+      message: "ROSCA created successfully",
       data: savedRosca,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error creating ROSCA:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to create Rosca",
+      message: "Failed to create ROSCA",
       error: error.message,
     });
   }
@@ -202,7 +218,7 @@ const getallRosca = async (req, res) => {
 
 const joinRosca = async (req, res) => {
   try {
-    const { id: roscaId } = req.body; // Assuming the Rosca ID is passed as req.body.id
+    const { id: roscaId, username } = req.body; // Get the rosca ID and username from the request body
 
     // Fetch the specific Rosca by ID
     const rosca = await roscaModel.findById(roscaId);
@@ -215,8 +231,20 @@ const joinRosca = async (req, res) => {
       });
     }
 
+    // Check if the user has already joined the Rosca
+    const userAlreadyJoined = rosca.members.some(
+      (member) => member.name === username
+    );
+    if (userAlreadyJoined) {
+      return res.status(400).json({
+        success: false,
+        message: "User already joined this Rosca.",
+      });
+    }
+
+    // Add the user to the Rosca's members list
     rosca.members.push({
-      id: req.userData.id,
+      name: username,
       payment: false,
     });
 
@@ -231,10 +259,11 @@ const joinRosca = async (req, res) => {
     console.error(error);
     res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: "Internal Server Error.",
     });
   }
 };
+
 const getSpecific = async (req, res) => {
   try {
     const userId = req.userData.id;

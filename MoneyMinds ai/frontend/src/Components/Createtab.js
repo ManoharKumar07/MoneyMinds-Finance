@@ -5,20 +5,31 @@ import axios from "axios";
 
 const CreateRoscaForm = () => {
   const { user } = useSelector((state) => state.user);
-  const [form] = Form.useForm(); // Access the form instance
+  const [form] = Form.useForm();
 
   const handleFinish = async (values) => {
     try {
-      const { roscaName, size, amount, isAdmin, duration, aadharNo } = values;
+      console.log("USER ID ISSSSSSSSSSSSS", user.name);
+      if (!user?.name) {
+        message.error("User data is missing. Please log in again.");
+        return;
+      }
+      console.log("USER ID ISSSSSSSSSSSSS", user.id);
+      const { roscaName, size, amount, duration, aadharNo } = values;
 
       const newRosca = {
         roscaName,
         size,
         amount,
-        isAdmin,
         duration,
         aadharNo,
-        members: [{ id: user.id, name: user.name, payment: false }],
+        members: [
+          {
+            name: user.name,
+            payment: false,
+            isAdmin: true,
+          },
+        ],
         bid: [],
       };
 
@@ -28,9 +39,7 @@ const CreateRoscaForm = () => {
         newRosca
       );
 
-      // Clear the form
       form.resetFields();
-
       message.success("ROSCA created successfully!");
     } catch (error) {
       console.error("Error creating ROSCA:", error);
@@ -48,7 +57,7 @@ const CreateRoscaForm = () => {
             required
             rules={[{ required: true, message: "Name is required" }]}
           >
-            <Input type="text" placeholder="Enter ROSCA name" />
+            <Input type="text" placeholder="Enter ROSCA name " />
           </Form.Item>
         </Col>
         <Col xs={24} md={24} lg={8}>
@@ -74,17 +83,31 @@ const CreateRoscaForm = () => {
       </Row>
       <Row gutter={20}>
         <Col xs={24} md={24} lg={8}>
-          <Form.Item label="Is Admin" name="isAdmin" initialValue={false}>
-            <Input type="checkbox" />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={24} lg={8}>
-          <Form.Item label="Duration" name="duration">
+          <Form.Item
+            label="Duration"
+            name="duration"
+            required
+            rules={[{ required: true, message: "Duration is required" }]}
+          >
             <Input type="text" placeholder="Enter ROSCA duration" />
           </Form.Item>
         </Col>
         <Col xs={24} md={24} lg={8}>
-          <Form.Item label="Aadhar No" name="aadharNo">
+          <Form.Item
+            label="Aadhar No"
+            name="aadharNo"
+            required
+            rules={[
+              {
+                required: true,
+                message: "Aadhar number is required",
+              },
+              {
+                len: 12,
+                message: "Aadhar number must be 12 digits",
+              },
+            ]}
+          >
             <Input type="number" placeholder="Enter Aadhar number" />
           </Form.Item>
         </Col>

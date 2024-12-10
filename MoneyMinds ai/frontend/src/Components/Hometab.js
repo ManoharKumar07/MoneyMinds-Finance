@@ -1,17 +1,18 @@
-// Hometab.js
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import styled from "styled-components";
+import { useSelector } from "react-redux";
+import { message } from "antd";
 
 const Container = styled.div`
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  padding: 16px; /* Added padding to provide space around the cards */
+  padding: 16px;
 `;
 
 const RoscaCard = styled.div`
-  width: 30%; /* Set the width to 30% to display 3 cards in a row */
+  width: 30%;
   margin: 16px 0;
   box-sizing: border-box;
 `;
@@ -62,13 +63,13 @@ const Pagination = styled.div`
 `;
 
 const Hometab = () => {
+  const { user } = useSelector((state) => state.user);
   const [roscas, setRoscas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const roscasPerPage = 3;
 
   useEffect(() => {
-    // Fetch the list of all roscas
     const fetchRoscas = async () => {
       try {
         const response = await axios.post(
@@ -86,6 +87,38 @@ const Hometab = () => {
 
     fetchRoscas();
   }, []);
+
+  const handleJoinRosca = async (roscaId) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:8080/api/v1/user/join",
+        {
+          id: roscaId,
+          username: user.name,
+        }
+      );
+
+      if (response.data.success) {
+        message.success(response.data.message);
+        setRoscas((prevRoscas) =>
+          prevRoscas.map((rosca) =>
+            rosca._id === roscaId
+              ? {
+                  ...rosca,
+                  members: [
+                    ...rosca.members,
+                    { name: user.name, payment: false },
+                  ],
+                }
+              : rosca
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error joining Rosca:", error);
+      message.error(error.response?.data?.message || "Failed to join Rosca");
+    }
+  };
 
   const indexOfLastRosca = currentPage * roscasPerPage;
   const indexOfFirstRosca = indexOfLastRosca - roscasPerPage;
@@ -114,12 +147,20 @@ const Hometab = () => {
                   <p>Duration: {rosca.duration}</p>
                   <p>Admin: {rosca.isAdmin ? "Yes" : "No"}</p>
                   <p>Members: {rosca.members.length}</p>
-                  <button>Join</button>
+                  <button
+                    onClick={() => handleJoinRosca(rosca._id)}
+                    disabled={rosca.members.some(
+                      (member) => member.name === user.name
+                    )}
+                  >
+                    {rosca.members.some((member) => member.name === user.name)
+                      ? "Joined"
+                      : "Join"}
+                  </button>
                 </CardContent>
               </RoscaCard>
             ))}
           </Container>
-          {/* Basic pagination */}
           <Pagination>
             {[...Array(Math.ceil(roscas.length / roscasPerPage))].map(
               (_, index) => (

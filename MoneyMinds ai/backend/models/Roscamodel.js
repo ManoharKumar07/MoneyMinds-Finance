@@ -1,5 +1,42 @@
 const mongoose = require("mongoose");
 
+const memberSchema = new mongoose.Schema({
+  // id: {
+  //   type: String,
+  //   required: true,
+  // },
+  name: {
+    type: String,
+    required: true,
+  },
+  payment: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+  isAdmin: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+});
+
+// Subschema for a bid
+const bidSchema = new mongoose.Schema({
+  id: {
+    type: String,
+    required: true,
+  },
+  name: {
+    type: String,
+    required: true,
+  },
+  amount: {
+    type: Number,
+    required: true,
+  },
+});
+
 const roscaSchema = new mongoose.Schema({
   roscaName: {
     type: String,
@@ -26,10 +63,13 @@ const roscaSchema = new mongoose.Schema({
     type: Number,
   },
   members: {
-    type: Array,
+    type: [memberSchema], // Array of member objects
+    required: true,
+    default: [], // Initialize with an empty array
   },
   bid: {
-    type: Array,
+    type: [bidSchema], // Array of bid objects
+    default: [], // Initialize with an empty array
   },
 });
 

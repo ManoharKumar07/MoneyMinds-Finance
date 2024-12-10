@@ -32,7 +32,7 @@ router.post("/createrosca", createRosca);
 
 router.post("/getallrosca", getallRosca);
 
-router.post("/join", authMiddleware, joinRosca);
+router.post("/join", joinRosca);
 
 router.post("/roscapayment", authMiddleware, roscaPayment);
 
