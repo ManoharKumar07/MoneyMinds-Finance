@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import styled from "styled-components";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux"; // Import useDispatch
 import { message } from "antd";
+import { setRoscaId } from "../redux/features/roscaSlice"; // Import the setRoscaId action
 
 const Container = styled.div`
   display: flex;
@@ -62,8 +63,9 @@ const Pagination = styled.div`
   }
 `;
 
-const Hometab = () => {
+const Hometab = ({ setActive }) => {
   const { user } = useSelector((state) => state.user);
+  const dispatch = useDispatch(); // Initialize useDispatch
   const [roscas, setRoscas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -128,6 +130,12 @@ const Hometab = () => {
     setCurrentPage(pageNumber);
   };
 
+  const handleRoscaClick = (roscaId) => {
+    setActive(8); // Set active to 8 on click
+    console.log(roscaId);
+    dispatch(setRoscaId(roscaId)); // Dispatch the roscaId to Redux store
+  };
+
   return (
     <div>
       <h2 style={{ marginBottom: "16px" }}>All Roscas</h2>
@@ -139,7 +147,10 @@ const Hometab = () => {
         <>
           <Container>
             {currentRoscas.map((rosca) => (
-              <RoscaCard key={rosca._id}>
+              <RoscaCard
+                key={rosca._id}
+                onClick={() => handleRoscaClick(rosca._id)} // Pass roscaId to the click handler
+              >
                 <CardContent>
                   <h3>{rosca.roscaName}</h3>
                   <p>Size: {rosca.size}</p>
@@ -148,7 +159,10 @@ const Hometab = () => {
                   <p>Admin: {rosca.isAdmin ? "Yes" : "No"}</p>
                   <p>Members: {rosca.members.length}</p>
                   <button
-                    onClick={() => handleJoinRosca(rosca._id)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent triggering handleRoscaClick
+                      handleJoinRosca(rosca._id);
+                    }}
                     disabled={rosca.members.some(
                       (member) => member.name === user.name
                     )}

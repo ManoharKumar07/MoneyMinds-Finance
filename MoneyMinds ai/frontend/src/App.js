@@ -32,10 +32,11 @@ function App() {
       case 5:
         return <Fund active={active} setActive={setActive} />;
       case 6:
-        return <Rosca />;
+        return <Rosca setActive={setActive} />;
       case 7:
         return <Payment active={active} setActive={setActive} />;
-
+      case 8:
+        return <OpenRosca />;
       default:
         return <Dashboard />;
     }

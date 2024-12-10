@@ -22,7 +22,7 @@ import axios from "axios";
 import OpenRosca from "./OpenRosca";
 import RoscaPayment from "./RoscaPayment";
 
-const Layout = () => {
+const Layout = ({ setActive }) => {
   const RoscaSymbol = styled.div`
     width: 50px;
     height: 50px;
@@ -82,7 +82,7 @@ const Layout = () => {
   const displayData = () => {
     switch (tab) {
       case 1:
-        return <Hometab />;
+        return <Hometab setActive={setActive} />;
       case 2:
         return <Createtab />;
       case 3:

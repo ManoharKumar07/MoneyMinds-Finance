@@ -1,10 +1,10 @@
 import React from "react";
 import Layout from "./Layout";
 
-const Rosca = () => {
+const Rosca = ({ setActive }) => {
   return (
     <div>
-      <Layout />
+      <Layout setActive={setActive} />
     </div>
   );
 };
