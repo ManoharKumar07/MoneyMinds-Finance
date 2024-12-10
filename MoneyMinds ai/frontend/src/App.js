@@ -12,6 +12,7 @@ import Fund from "./Components/Fund";
 import Rosca from "./Components/Rosca";
 import Payment from "./Components/Payment";
 import OpenRosca from "./Components/OpenRosca";
+import RoscaPayment from "./Components/RoscaPayment";
 
 function App() {
   const [active, setActive] = useState(1);
@@ -36,7 +37,9 @@ function App() {
       case 7:
         return <Payment active={active} setActive={setActive} />;
       case 8:
-        return <OpenRosca />;
+        return <OpenRosca setActive={setActive} />;
+      case 9:
+        return <RoscaPayment active={active} setActive={setActive} />;
       default:
         return <Dashboard />;
     }

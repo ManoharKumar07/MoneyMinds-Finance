@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import styled from "styled-components";
-import { Badge } from "antd";
+import { Badge, Button, message } from "antd";
 import { useSelector } from "react-redux";
 
 const SidebarContainer = styled.div`
@@ -9,8 +9,8 @@ const SidebarContainer = styled.div`
   padding: 20px;
   border-radius: 10px;
   margin-top: 20px;
-  width: 400px; /* Adjust the width as needed */
-  height: auto; /* Adjust height dynamically */
+  width: 400px;
+  height: auto;
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -31,51 +31,26 @@ const SubHeading = styled.h3`
   padding-bottom: 5px;
 `;
 
-const MemberList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0;
-`;
-
-const MemberItem = styled.li`
+const ButtonContainer = styled.div`
+  margin-top: 20px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  margin-bottom: 8px;
-  background-color: #fff;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
-  span {
-    font-weight: ${(props) => (props.isAdmin ? "bold" : "normal")};
-    color: ${(props) => (props.isAdmin ? "#007bff" : "#000")};
-  }
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
 `;
 
-const BidList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0;
+const ButtonStyled = styled(Button)`
+  min-width: 120px;
+  font-weight: bold;
 `;
 
-const BidItem = styled.li`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  margin-bottom: 8px;
-  background-color: #fff;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-`;
-
-const OpenRosca = () => {
-  const { roscaId } = useSelector((state) => state.rosca); // Access roscaId from Redux
+const OpenRosca = ({ setActive }) => {
+  const { roscaId } = useSelector((state) => state.rosca);
+  const currentUser = useSelector((state) => state.user.name); // Current user's name from Redux
   const [roscaDetails, setRoscaDetails] = useState(null);
 
   useEffect(() => {
-    if (!roscaId) return; // Exit if no roscaId is available
+    if (!roscaId) return;
 
     const fetchRoscaDetails = async () => {
       try {
@@ -94,9 +69,23 @@ const OpenRosca = () => {
     fetchRoscaDetails();
   }, [roscaId]);
 
+  const handleMakePayment = async () => {
+    setActive(9); // Set active step to 9
+  };
+
   if (!roscaDetails) {
     return <SidebarContainer>Loading Rosca details...</SidebarContainer>;
   }
+
+  // Check if the current user is the admin
+  const isCurrentUserAdmin = roscaDetails.members.some(
+    (member) => member.isAdmin && member.name === currentUser
+  );
+
+  // Check if the current user has made payment
+  const hasCurrentUserPaid = roscaDetails.members.some(
+    (member) => member.name === currentUser && member.payment
+  );
 
   return (
     <SidebarContainer>
@@ -126,42 +115,78 @@ const OpenRosca = () => {
       {/* Members List */}
       <Section>
         <SubHeading>Members</SubHeading>
-        <MemberList>
-          {roscaDetails.members.map((member, index) => (
-            <MemberItem key={index} isAdmin={member.isAdmin}>
-              <span>
-                {member.name}
-                {member.isAdmin && " (Admin)"}
-              </span>
-              <Badge
-                status={member.payment ? "success" : "error"}
-                text={member.payment ? "Paid" : "Unpaid"}
-              />
-            </MemberItem>
-          ))}
-        </MemberList>
+        {roscaDetails.members.map((member) => (
+          <div key={member._id}>
+            <span>
+              {member.name}
+              {member.isAdmin && " (Admin)"}
+            </span>{" "}
+            <Badge
+              status={member.payment ? "success" : "error"}
+              text={member.payment ? "Paid" : "Unpaid"}
+            />
+          </div>
+        ))}
       </Section>
 
       {/* Bids List */}
       <Section>
         <SubHeading>Bids</SubHeading>
         {roscaDetails.bid.length > 0 ? (
-          <BidList>
-            {roscaDetails.bid.map((bid, index) => (
-              <BidItem key={index}>
-                <span>
-                  <strong>Name:</strong> {bid.name}
-                </span>
-                <span>
-                  <strong>Amount:</strong> ₹{bid.amount}
-                </span>
-              </BidItem>
-            ))}
-          </BidList>
+          roscaDetails.bid.map((bid, index) => (
+            <div key={index}>
+              <p>
+                <strong>Name:</strong> {bid.name}
+              </p>
+              <p>
+                <strong>Amount:</strong> ₹{bid.amount}
+              </p>
+            </div>
+          ))
         ) : (
           <p>No bids available.</p>
         )}
       </Section>
+
+      {/* Buttons */}
+      <ButtonContainer>
+        {/* Only show the "Make Payment" button with an onClick */}
+        {!hasCurrentUserPaid && (
+          <ButtonStyled
+            type="primary"
+            style={{ backgroundColor: "#28a745", borderColor: "#28a745" }}
+            onClick={handleMakePayment} // Trigger the "Make Payment" functionality
+          >
+            Make Payment
+          </ButtonStyled>
+        )}
+        {hasCurrentUserPaid && (
+          <ButtonStyled
+            type="default"
+            style={{ backgroundColor: "#ffc107", borderColor: "#ffc107" }}
+            disabled
+          >
+            Payment Done
+          </ButtonStyled>
+        )}
+
+        {/* Other buttons without onClick */}
+        <ButtonStyled
+          type="primary"
+          style={{ backgroundColor: "#007bff", borderColor: "#007bff" }}
+        >
+          Make Bid
+        </ButtonStyled>
+
+        {isCurrentUserAdmin && (
+          <ButtonStyled
+            type="danger"
+            style={{ backgroundColor: "#dc3545", borderColor: "#dc3545" }}
+          >
+            Allocate Bid
+          </ButtonStyled>
+        )}
+      </ButtonContainer>
     </SidebarContainer>
   );
 };

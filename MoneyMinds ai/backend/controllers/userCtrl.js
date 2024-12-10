@@ -347,9 +347,9 @@ const getMem = async (req, res) => {
 
 const roscaPayment = async (req, res) => {
   try {
-    const { id: roscaId } = req.body;
-    const userId = req.userData.id;
-
+    const { roscaId, username } = req.body; // Extract roscaId and username from the request body
+    console.log(roscaId);
+    console.log(username);
     // Fetch the specific Rosca by ID
     const rosca = await roscaModel.findById(roscaId);
 
@@ -361,31 +361,37 @@ const roscaPayment = async (req, res) => {
       });
     }
 
-    const userIndex = rosca.members.findIndex((member) => member.id === userId);
+    // Find the member in the members array by username
+    const userIndex = rosca.members.findIndex(
+      (member) => member.name === username
+    );
 
+    // Check if the user exists in the Rosca members array
     if (userIndex !== -1) {
-      rosca.members[userIndex].payment = true;
+      rosca.members[userIndex].payment = true; // Mark the payment as true
+
       // Save the updated Rosca
       await rosca.save();
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: "Payment successful.",
       });
     } else {
-      res.status(404).json({
+      return res.status(404).json({
         success: false,
         message: "User not found in Rosca.",
       });
     }
   } catch (error) {
-    console.error(error);
+    console.error("Error processing payment:", error);
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
     });
   }
 };
+
 module.exports = {
   loginController,
   registerController,

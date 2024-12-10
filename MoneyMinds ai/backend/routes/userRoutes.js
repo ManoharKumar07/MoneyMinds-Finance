@@ -34,7 +34,7 @@ router.post("/getallrosca", getallRosca);
 
 router.post("/join", joinRosca);
 
-router.post("/roscapayment", authMiddleware, roscaPayment);
+router.post("/roscapayment", roscaPayment);
 
 router.post("/getspecific", authMiddleware, getSpecific);
 

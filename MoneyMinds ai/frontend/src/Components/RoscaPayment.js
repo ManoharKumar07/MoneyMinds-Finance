@@ -3,8 +3,7 @@ import { InnerLayout } from "../styles/Layouts";
 import styled from "styled-components";
 import { Form, Input, Button, message } from "antd";
 import axios from "axios";
-import { useDispatch } from "react-redux";
-import { showLoading, hideLoading } from "../redux/features/alertSlice";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 const RoscaPayment = ({ setActive }) => {
@@ -12,37 +11,31 @@ const RoscaPayment = ({ setActive }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  // Accessing roscaId and username from Redux state
+  const { roscaId } = useSelector((state) => state.rosca);
+  const { user } = useSelector((state) => state.user);
+
+  // Modified onFinish function to handle form submission
   const onFinish = async (values) => {
     try {
-      dispatch(showLoading());
-
-      // Make API call to send money
+      // Make API call to make the payment with roscaId, username, and amount
       const response = await axios.post(
         "http://localhost:8080/api/v1/user/roscapayment",
         {
-          amount: values.amount,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          roscaId, // Send roscaId from Redux state
+          username: user.name, // Send username from Redux state
         }
       );
 
-      dispatch(hideLoading());
-
       if (response.data.success) {
         message.success(response.data.message);
-
         form.resetFields();
-        // Navigate to dashboard
-        setActive(7);
+        setActive(8); // Update active step to 8
         window.location.reload();
       } else {
         message.error(response.data.message);
       }
     } catch (error) {
-      dispatch(hideLoading());
       message.error("An error occurred. Please try again later.");
       console.error(error);
       navigate("/login");
@@ -68,8 +61,7 @@ const RoscaPayment = ({ setActive }) => {
                 htmlType="submit"
                 className="add-money-button"
               >
-                Send Money
-                <p>&nbsp;</p>
+                Make Payment
               </Button>
             </Form.Item>
           </Form>
@@ -88,6 +80,7 @@ const PaymentStyled = styled.div`
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   }
+
   button.add-money-button {
     background-color: #4caf50;
     border: none;
@@ -103,21 +96,6 @@ const PaymentStyled = styled.div`
     margin: 0 auto;
     margin-left: 100px;
     padding-bottom: 10px;
-  }
-  .send-money-button {
-    background-color: #4caf50;
-    border: none;
-    color: white;
-    padding: 10px 20px; /* Adjusted padding */
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 8px;
-    margin: 0 auto;
-    display: block;
-    margin-bottom: 10px;
   }
 `;
 
