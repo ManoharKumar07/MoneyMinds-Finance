@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import styled from "styled-components";
-import { Badge, Button, message } from "antd";
 import { useSelector } from "react-redux";
 
 const SidebarContainer = styled.div`
@@ -10,7 +9,6 @@ const SidebarContainer = styled.div`
   border-radius: 10px;
   margin-top: 20px;
   width: 400px;
-  height: auto;
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -39,15 +37,46 @@ const ButtonContainer = styled.div`
   justify-content: center;
 `;
 
-const ButtonStyled = styled(Button)`
+const ButtonStyled = styled.button`
   min-width: 120px;
   font-weight: bold;
+  padding: 10px;
+  background-color: ${(props) => props.color || "#007bff"};
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+`;
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
 `;
 
 const OpenRosca = ({ setActive }) => {
   const { roscaId } = useSelector((state) => state.rosca);
-  const currentUser = useSelector((state) => state.user.name); // Current user's name from Redux
+  const currentUser = useSelector((state) => state.user.user?.name); // Current user's name from Redux
   const [roscaDetails, setRoscaDetails] = useState(null);
+  const [bidModalVisible, setBidModalVisible] = useState(false);
+  const [bidAmount, setBidAmount] = useState("");
 
   useEffect(() => {
     if (!roscaId) return;
@@ -62,36 +91,69 @@ const OpenRosca = ({ setActive }) => {
           setRoscaDetails(response.data.rosca);
         }
       } catch (error) {
-        console.error("Error fetching rosca details:", error);
+        console.error("Error fetching Rosca details:", error);
       }
     };
 
     fetchRoscaDetails();
   }, [roscaId]);
 
-  const handleMakePayment = async () => {
-    setActive(9); // Set active step to 9
+  const handleMakeBid = async () => {
+    const numericBidAmount = Number(bidAmount);
+    console.log("mmmmmm", numericBidAmount);
+
+    if (!numericBidAmount || isNaN(numericBidAmount) || numericBidAmount <= 0) {
+      alert("Please enter a valid bid amount.");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        "http://localhost:8080/api/v1/user/makebid",
+        {
+          username: currentUser,
+          roscaId,
+          bidAmount: numericBidAmount,
+        }
+      );
+
+      if (response.data.success) {
+        alert("Bid placed successfully!");
+        setRoscaDetails((prev) => ({
+          ...prev,
+          bid: [...prev.bid, { name: currentUser, amount: numericBidAmount }],
+        }));
+        setBidModalVisible(false);
+        setBidAmount("");
+      }
+    } catch (error) {
+      console.error("Error adding bid:", error);
+      alert("Failed to place bid. Please try again.");
+    }
   };
+
+  const handleMakePayment = () => {
+    setActive(9);
+  };
+
+  const isCurrentUserAdmin = roscaDetails?.members?.some(
+    (member) =>
+      member.isAdmin &&
+      member.name.toLowerCase() === (currentUser || "").toLowerCase()
+  );
+
+  const hasCurrentUserPaid = roscaDetails?.members?.some(
+    (member) => member.name === currentUser && member.payment
+  );
 
   if (!roscaDetails) {
     return <SidebarContainer>Loading Rosca details...</SidebarContainer>;
   }
 
-  // Check if the current user is the admin
-  const isCurrentUserAdmin = roscaDetails.members.some(
-    (member) => member.isAdmin && member.name === currentUser
-  );
-
-  // Check if the current user has made payment
-  const hasCurrentUserPaid = roscaDetails.members.some(
-    (member) => member.name === currentUser && member.payment
-  );
-
   return (
     <SidebarContainer>
       <Heading>Rosca Details</Heading>
 
-      {/* Basic Rosca Details */}
       <Section>
         <SubHeading>Basic Details</SubHeading>
         <p>
@@ -106,13 +168,8 @@ const OpenRosca = ({ setActive }) => {
         <p>
           <strong>Duration:</strong> {roscaDetails.duration}
         </p>
-        <p>
-          <strong>Aadhar Number:</strong>{" "}
-          {roscaDetails.aadharNo || "Not Provided"}
-        </p>
       </Section>
 
-      {/* Members List */}
       <Section>
         <SubHeading>Members</SubHeading>
         {roscaDetails.members.map((member) => (
@@ -120,16 +177,20 @@ const OpenRosca = ({ setActive }) => {
             <span>
               {member.name}
               {member.isAdmin && " (Admin)"}
-            </span>{" "}
-            <Badge
-              status={member.payment ? "success" : "error"}
-              text={member.payment ? "Paid" : "Unpaid"}
-            />
+            </span>
+            <span
+              style={{
+                color: member.payment ? "green" : "red",
+                textAlign: "right",
+              }}
+            >
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+              {member.payment ? "Paid" : "Unpaid"}
+            </span>
           </div>
         ))}
       </Section>
 
-      {/* Bids List */}
       <Section>
         <SubHeading>Bids</SubHeading>
         {roscaDetails.bid.length > 0 ? (
@@ -148,45 +209,54 @@ const OpenRosca = ({ setActive }) => {
         )}
       </Section>
 
-      {/* Buttons */}
       <ButtonContainer>
-        {/* Only show the "Make Payment" button with an onClick */}
         {!hasCurrentUserPaid && (
-          <ButtonStyled
-            type="primary"
-            style={{ backgroundColor: "#28a745", borderColor: "#28a745" }}
-            onClick={handleMakePayment} // Trigger the "Make Payment" functionality
-          >
+          <ButtonStyled color="#28a745" onClick={handleMakePayment}>
             Make Payment
           </ButtonStyled>
         )}
         {hasCurrentUserPaid && (
-          <ButtonStyled
-            type="default"
-            style={{ backgroundColor: "#ffc107", borderColor: "#ffc107" }}
-            disabled
-          >
+          <ButtonStyled color="#ffc107" disabled>
             Payment Done
           </ButtonStyled>
         )}
 
-        {/* Other buttons without onClick */}
-        <ButtonStyled
-          type="primary"
-          style={{ backgroundColor: "#007bff", borderColor: "#007bff" }}
-        >
+        <ButtonStyled color="#007bff" onClick={() => setBidModalVisible(true)}>
           Make Bid
         </ButtonStyled>
 
         {isCurrentUserAdmin && (
-          <ButtonStyled
-            type="danger"
-            style={{ backgroundColor: "#dc3545", borderColor: "#dc3545" }}
-          >
-            Allocate Bid
-          </ButtonStyled>
+          <ButtonStyled color="#dc3545">Allocate Bid</ButtonStyled>
         )}
       </ButtonContainer>
+
+      {bidModalVisible && (
+        <ModalOverlay>
+          <ModalContent>
+            <h3>Enter Bid Amount</h3>
+            <input
+              type="number"
+              placeholder="Enter your bid amount"
+              value={bidAmount}
+              onChange={async (e) => {
+                await setBidAmount(e.target.value);
+                console.log(bidAmount);
+              }}
+            />
+            <div style={{ marginTop: "20px" }}>
+              <ButtonStyled color="#007bff" onClick={handleMakeBid}>
+                Submit
+              </ButtonStyled>
+              <ButtonStyled
+                color="#dc3545"
+                onClick={() => setBidModalVisible(false)}
+              >
+                Cancel
+              </ButtonStyled>
+            </div>
+          </ModalContent>
+        </ModalOverlay>
+      )}
     </SidebarContainer>
   );
 };

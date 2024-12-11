@@ -11,6 +11,8 @@ const {
   openRosca,
   getMem,
   roscaPayment,
+  makeBid,
+  allocateBid,
 } = require("../controllers/userCtrl");
 const authMiddleware = require("../middlewares/authMiddleware");
 //router object
@@ -42,4 +44,7 @@ router.post("/openrosca/:id", openRosca);
 
 router.post("/getmem", getMem);
 
+router.post("/makebid", makeBid);
+
+router.post("/allocatebid", allocateBid);
 module.exports = router;

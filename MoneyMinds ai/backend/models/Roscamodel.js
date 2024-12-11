@@ -19,10 +19,6 @@ const memberSchema = new mongoose.Schema({
 
 // Subschema for a bid
 const bidSchema = new mongoose.Schema({
-  id: {
-    type: String,
-    required: true,
-  },
   name: {
     type: String,
     required: true,
@@ -53,6 +49,9 @@ const roscaSchema = new mongoose.Schema({
     type: Boolean,
   },
   duration: {
+    type: String,
+  },
+  allocatedtoo: {
     type: String,
   },
   aadharNo: {

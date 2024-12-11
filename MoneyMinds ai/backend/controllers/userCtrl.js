@@ -392,6 +392,108 @@ const roscaPayment = async (req, res) => {
   }
 };
 
+const makeBid = async (req, res) => {
+  try {
+    const { roscaId, username, bidAmount } = req.body; // Extract roscaId, username, and bidAmount from the request body
+
+    console.log("Rosca ID:", roscaId);
+    console.log("Username:", username);
+    console.log("Bid Amount:", bidAmount);
+
+    // Fetch the specific Rosca by ID
+    const rosca = await roscaModel.findById(roscaId);
+
+    // Check if the Rosca exists
+    if (!rosca) {
+      return res.status(404).json({
+        success: false,
+        message: "Rosca not found.",
+      });
+    }
+
+    // Check if the user is a member of the Rosca
+    const isUserMember = rosca.members.some(
+      (member) => member.name === username
+    );
+
+    if (!isUserMember) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found in Rosca.",
+      });
+    }
+
+    // Add the new bid to the bid array
+    rosca.bid.push({
+      name: username,
+      amount: bidAmount,
+    });
+
+    // Save the updated Rosca document
+    await rosca.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Bid added successfully.",
+      updatedRosca: rosca, // Optionally include the updated Rosca in the response
+    });
+  } catch (error) {
+    console.error("Error adding bid:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const allocateBid = async (req, res) => {
+  try {
+    const { roscaId } = req.body; // Extract roscaId from the request body
+
+    // Fetch the specific Rosca by ID
+    const rosca = await roscaModel.findById(roscaId);
+
+    // Check if the Rosca exists
+    if (!rosca) {
+      return res.status(404).json({
+        success: false,
+        message: "Rosca not found.",
+      });
+    }
+
+    // Check if there are any bids
+    if (!rosca.bid || rosca.bid.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No bids available to allocate.",
+      });
+    }
+
+    // Find the lowest bid
+    const lowestBid = rosca.bid.reduce((minBid, currentBid) =>
+      currentBid.amount < minBid.amount ? currentBid : minBid
+    );
+
+    // Update the allocatedtoo field with the name of the member with the lowest bid
+    rosca.allocatedtoo = lowestBid.name;
+
+    // Save the updated Rosca document
+    await rosca.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Bid allocated successfully to ${lowestBid.name}.`,
+      allocatedTo: lowestBid.name, // Include the name of the allocated member in the response
+    });
+  } catch (error) {
+    console.error("Error allocating bid:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
 module.exports = {
   loginController,
   registerController,
@@ -404,4 +506,6 @@ module.exports = {
   openRosca,
   getMem,
   roscaPayment,
+  makeBid,
+  allocateBid,
 };
