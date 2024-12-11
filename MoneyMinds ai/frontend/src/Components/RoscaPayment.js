@@ -31,7 +31,7 @@ const RoscaPayment = ({ setActive }) => {
         message.success(response.data.message);
         form.resetFields();
         setActive(8); // Update active step to 8
-        window.location.reload();
+        // window.location.reload();
       } else {
         message.error(response.data.message);
       }

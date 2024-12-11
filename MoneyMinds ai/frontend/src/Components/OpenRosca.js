@@ -226,7 +226,60 @@ const OpenRosca = ({ setActive }) => {
         </ButtonStyled>
 
         {isCurrentUserAdmin && (
-          <ButtonStyled color="#dc3545">Allocate Bid</ButtonStyled>
+          <>
+            <ButtonStyled
+              color="#dc3545"
+              onClick={async () => {
+                try {
+                  const response = await axios.post(
+                    "http://localhost:8080/api/v1/user/allocatebid",
+                    { roscaId }
+                  );
+
+                  if (response.data.success) {
+                    alert("Bid allocated successfully!");
+                    setRoscaDetails((prev) => ({
+                      ...prev,
+                      allocatedtoo: response.data.allocatedTo, // Assuming the API returns the allocated name
+                    }));
+
+                    // Refresh the page to reflect the updated data
+                    window.location.reload();
+                  } else {
+                    alert("Failed to allocate bid. Please try again.");
+                  }
+                } catch (error) {
+                  console.error("Error allocating bid:", error);
+                  alert("Internal server error. Please try again later.");
+                }
+              }}
+            >
+              Allocate Bid
+            </ButtonStyled>
+
+            {roscaDetails.allocatedtoo && (
+              <p
+                style={{
+                  textAlign: "center",
+                  color: "#28a745",
+                  marginTop: "10px",
+                }}
+              >
+                {/* <strong>Bid Allocated To:</strong> {roscaDetails.allocatedtoo} */}
+              </p>
+            )}
+          </>
+        )}
+        {roscaDetails.allocatedtoo && (
+          <p
+            style={{
+              textAlign: "center",
+              color: "#28a745",
+              marginTop: "10px",
+            }}
+          >
+            <strong>Bid Allocated To:</strong> {roscaDetails.allocatedtoo}
+          </p>
         )}
       </ButtonContainer>
 
